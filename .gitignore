@@ -1,1 +1,9 @@
 node_modules/
+__pycache__/
+*.pyc
+.DS_Store
+.env
+*.xlsx
+data_account.json
+ibkr_session.json
+MACD_BOT_STRATEGY/MACD_ENTRY_EXIT/shadow/

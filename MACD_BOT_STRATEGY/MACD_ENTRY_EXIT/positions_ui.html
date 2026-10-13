@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Carriero · Live Positions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:          #0B1426;
+    --surface:     #0f1e35;
+    --surface2:    #132540;
+    --teal:        #1B9E8A;
+    --gold:        #C8A850;
+    --text:        #E8EDF5;
+    --muted:       #7A8FA6;
+    --border:      #1a2d47;
+    --pos-pnl:     #1B9E8A;
+    --neg-pnl:     #E85D5D;
+    --radius:      8px;
+    --radius-sm:   4px;
+  }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  /* ── Top bar ── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    height: 56px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+  }
+  .logo-mark {
+    width: 32px; height: 32px;
+    background: var(--teal);
+    border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 15px; color: #fff;
+    letter-spacing: -0.5px;
+    flex-shrink: 0;
+  }
+  .logo-text {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--text);
+    text-transform: uppercase;
+  }
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .live-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+  }
+  .live-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #4caf50;
+    box-shadow: 0 0 0 0 rgba(76,175,80,.6);
+    animation: pulse 2s infinite;
+  }
+  .live-dot.offline { background: var(--neg-pnl); animation: none; box-shadow: none; }
+  @keyframes pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(76,175,80,.6); }
+    70%  { box-shadow: 0 0 0 7px rgba(76,175,80,0); }
+    100% { box-shadow: 0 0 0 0 rgba(76,175,80,0); }
+  }
+  .account-badge {
+    padding: 4px 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--gold);
+    letter-spacing: .5px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ── Page body ── */
+  .page { padding: 24px; max-width: 1400px; margin: 0 auto; }
+
+  /* ── Summary cards ── */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 900px) { .cards { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 500px) { .cards { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+  }
+  .card-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .card-value {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    line-height: 1;
+  }
+  .card-value.teal   { color: var(--teal); }
+  .card-value.gold   { color: var(--gold); }
+  .card-value.online { color: var(--teal); font-size: 14px; font-weight: 600; }
+  .card-value.offline { color: var(--neg-pnl); font-size: 14px; font-weight: 600; }
+
+  /* ── Section panels ── */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .panel-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+  }
+
+  /* ── Tables ── */
+  .tbl-wrap { overflow-x: auto; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  th {
+    padding: 10px 16px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    text-align: left;
+    white-space: nowrap;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 11px 16px;
+    font-size: 12.5px;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+
+  .empty-row td {
+    text-align: center;
+    color: var(--muted);
+    font-family: 'Inter', sans-serif;
+    padding: 32px 16px;
+    font-size: 13px;
+  }
+
+  /* ── Side badges ── */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    font-family: 'Inter', sans-serif;
+  }
+  .badge-long, .badge-buy    { background: rgba(27,158,138,.15); color: var(--teal); }
+  .badge-short, .badge-sell  { background: rgba(200,168,80,.15); color: var(--gold); }
+  .badge-stp                 { background: rgba(232,93,93,.15);  color: var(--neg-pnl); }
+  .badge-lmt                 { background: rgba(27,158,138,.15); color: var(--teal); }
+  .badge-stplmt              { background: rgba(200,168,80,.15); color: var(--gold); }
+  .badge-mkt                 { background: rgba(122,143,166,.15); color: var(--muted); }
+
+  /* ── P&L ── */
+  .pnl-pos { color: var(--pos-pnl); }
+  .pnl-neg { color: var(--neg-pnl); }
+  .pnl-nil { color: var(--muted); }
+
+  /* ── Status pills ── */
+  .status-pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 99px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .3px;
+    font-family: 'Inter', sans-serif;
+  }
+  .status-submitted, .status-presubmitted {
+    background: rgba(27,158,138,.12); color: var(--teal);
+  }
+  .status-filled {
+    background: rgba(27,158,138,.2); color: #2ECC9A;
+  }
+  .status-cancelled, .status-inactive {
+    background: rgba(122,143,166,.12); color: var(--muted);
+  }
+  .status-unknown {
+    background: rgba(200,168,80,.1); color: var(--gold);
+  }
+
+  /* ── Tabs ── */
+  .tabs {
+    display: flex;
+    gap: 4px;
+  }
+  .tab-btn {
+    padding: 5px 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .15s;
+    letter-spacing: .5px;
+    font-family: 'Inter', sans-serif;
+  }
+  .tab-btn:hover { color: var(--text); border-color: var(--teal); }
+  .tab-btn.active { background: var(--teal); color: #fff; border-color: var(--teal); }
+
+  /* ── Footer ── */
+  .footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0 0;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .footer-left { display: flex; gap: 8px; align-items: center; }
+  .countdown-bar {
+    display: inline-block;
+    width: 48px; height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .countdown-fill {
+    height: 100%;
+    background: var(--teal);
+    transition: width .1s linear;
+  }
+  /* 2026-07-31: stop-loss movement affordances */
+  .sl-moved{
+    color:#2ecc71; font-weight:700; font-size:11px; margin-left:4px;
+    white-space:nowrap;
+  }
+  .sl-sub{
+    color:var(--muted); font-size:10px; line-height:1.3; margin-top:1px;
+    white-space:nowrap;
+  }
+  /* 2026-08-03: ordered-vs-executed must be unmistakable at a glance */
+  .qty-partial{ color:#e0a800; font-weight:700; }
+  .qty-none{ color:var(--muted); }
+  .row-partial{ background:rgba(224,168,0,.07); }
+  /* 2026-08-04: does the protective stop cover the actual position? */
+  .stop-ok{ color:#2ecc71; font-size:11px; font-weight:600; margin-left:4px; }
+  .stop-bad{ color:#e74c3c; font-size:11px; font-weight:800; margin-left:4px; }
+  .qty-reduced{ color:#e0a800; font-weight:700; }
+</style>
+</head>
+<body>
+
+<!-- ── Top bar ── -->
+<header class="topbar">
+  <div class="logo">
+    <div class="logo-mark">C</div>
+    <span class="logo-text">Carriero</span>
+  </div>
+  <div class="topbar-right">
+    <div class="live-indicator">
+      <div class="live-dot" id="liveDot"></div>
+      <span id="liveText">Live</span>
+    </div>
+    <!-- 2026-08-06: shadow-mode badge. Orders are simulated locally; only the
+         market data still comes from the IBKR account. Links to the Shadow
+         Trader (:8090) where the shadow book and its history live. -->
+    <a id="shadowBadge" href="#" target="_blank" style="display:none;
+       background:#3b2a00;color:#d29922;border:1px solid #5a4300;padding:4px 10px;
+       border-radius:12px;font-size:12px;font-weight:700;text-decoration:none">
+       SHADOW MODE · net $0</a>
+    <div class="account-badge">DUXXXXXXX · Data only</div>
+  </div>
+</header>
+
+<!-- ── Page body ── -->
+<main class="page">
+
+  <div id="staleBanner" style="display:none;color:#fff;padding:10px 14px;border-radius:10px;margin-bottom:12px;font-weight:700;font-size:13px"></div>
+
+  <!-- Summary cards -->
+  <div class="cards">
+    <div class="card">
+      <div class="card-label">Open Positions</div>
+      <div class="card-value teal" id="cardPositions">–</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Open Orders</div>
+      <div class="card-value gold" id="cardOrders">–</div>
+    </div>
+    <div class="card">
+      <div class="card-label">TWS Status</div>
+      <div class="card-value" id="cardTws">–</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Realised P&amp;L (today)</div>
+      <div class="card-value" id="cardPnl">–</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Orders Placed</div>
+      <div class="card-value gold" id="cardPlaced">–</div>
+    </div>
+    <div class="card">
+      <div class="card-label">TWS Msg Rate</div>
+      <div class="card-value" id="cardRate">–</div>
+    </div>
+  </div>
+
+  <!-- Positions panel -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Positions</span>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Symbol</th>
+            <th>Side</th>
+            <th>Qty</th>
+            <th>Avg Cost</th>
+            <th>Last</th>
+            <th>Stop (SL)</th>
+            <th>Unrealised P&amp;L</th>
+            <th>Direction</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody id="positionsBody">
+          <tr class="empty-row"><td colspan="8">No open positions</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MACD State panel — live indicator values per symbol -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">MACD State</span>
+      <span style="color:var(--muted);font-size:11px;margin-left:auto">
+        MACD = Fast EMA − Slow EMA. MACD Diff = MACD − Signal. Long/Short means are the session-averaged thresholds used by the entry filters.
+      </span>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Symbol</th>
+            <th>Candles (E/X)</th>
+            <th>MACD fast (E/X)</th>
+            <th>Signal slow (E/X)</th>
+            <th>MACD Mean Long ×MultL (E/X)</th>
+            <th>MACD Mean Short ×MultS (E/X)</th>
+            <th>MACD Diff (E/X)</th>
+            <th>Diff Mean Long (E/X)</th>
+            <th>Diff Mean Short (E/X)</th>
+            <th>Mean Start</th>
+            <th>State</th>
+          </tr>
+        </thead>
+        <tbody id="macdBody">
+          <tr class="empty-row"><td colspan="11">No MACD pipelines</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Stop-loss movement panel -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Stop-Loss Movements</span>
+      <span style="color:var(--muted);font-size:11px;margin-left:auto">
+        Every time a protective stop was re-priced today (breakeven activation and each trail step).
+      </span>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Symbol</th>
+            <th>Order</th>
+            <th>From</th>
+            <th>To</th>
+            <th>Move</th>
+            <th>Trigger</th>
+          </tr>
+        </thead>
+        <tbody id="stopMovesBody">
+          <tr class="empty-row"><td colspan="7">No stop movements yet today</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Orders panel -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Orders</span>
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="all" onclick="switchTab('all')">All</button>
+        <button class="tab-btn" data-tab="entries"   onclick="switchTab('entries')">Entries</button>
+        <button class="tab-btn" data-tab="stops"     onclick="switchTab('stops')">Stops</button>
+        <button class="tab-btn" data-tab="filled"    onclick="switchTab('filled')">Filled</button>
+        <button class="tab-btn" data-tab="working"   onclick="switchTab('working')">Working</button>
+        <button class="tab-btn" data-tab="cancelled" onclick="switchTab('cancelled')">Cancelled / Rejected</button>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Order ID</th>
+            <th>Symbol</th>
+            <th>Role</th>
+            <th>Type</th>
+            <th>Side</th>
+            <th>Ordered</th>
+            <th>Executed</th>
+            <th>Order Price</th>
+            <th>Stop (SL)</th>
+            <th>Avg Fill</th>
+            <th>Slippage</th>
+            <th>Value</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="ordersBody">
+          <tr class="empty-row"><td colspan="14">No orders</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Completed round trips -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Completed Trades</span>
+      <span style="color:var(--muted);font-size:11px;margin-left:auto">
+        Round trips reconstructed from today's fills. P&amp;L is gross of commissions.
+      </span>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Symbol</th>
+            <th>Side</th>
+            <th>Qty</th>
+            <th>Entry Time</th>
+            <th>Entry Price</th>
+            <th>Exit Time</th>
+            <th>Exit Price</th>
+            <th>Exit Via</th>
+            <th>P&amp;L</th>
+          </tr>
+        </thead>
+        <tbody id="tripsBody">
+          <tr class="empty-row"><td colspan="9">No completed trades today</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="footer-left">
+      <span>Last refreshed: <span id="lastRefreshed">–</span></span>
+      <span>·</span>
+      <span>Next in <span id="countdown">3</span>s</span>
+      <div class="countdown-bar"><div class="countdown-fill" id="countdownFill" style="width:100%"></div></div>
+    </div>
+    <div>Carriero MACD Bot · Paper Account</div>
+  </div>
+
+</main>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let _activeTab = 'all';
+let _lastData  = null;
+let _countdownSec = 3;
+let _countdownInterval = null;
+
+// ── Tab switching ──────────────────────────────────────────────────────────
+function switchTab(tab) {
+  _activeTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === tab);
+  });
+  if (_lastData) renderOrders(_lastData);
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function sideBadge(side) {
+  const s = (side || '').toUpperCase();
+  if (s === 'LONG' || s === 'BUY')   return `<span class="badge badge-long">${s}</span>`;
+  if (s === 'SHORT' || s === 'SELL') return `<span class="badge badge-short">${s}</span>`;
+  return `<span class="badge">${esc(s)}</span>`;
+}
+
+function typeBadge(otype) {
+  const t = (otype || '').toUpperCase().replace('_', ' ');
+  if (t === 'STP')                return `<span class="badge badge-stp">STP</span>`;
+  if (t === 'LMT')                return `<span class="badge badge-lmt">LMT</span>`;
+  if (t === 'STP LMT')            return `<span class="badge badge-stplmt">STP LMT</span>`;
+  if (t === 'MKT')                return `<span class="badge badge-mkt">MKT</span>`;
+  return `<span class="badge badge-mkt">${esc(t)}</span>`;
+}
+
+function statusPill(status, executed) {
+  const s = (status || '').toLowerCase();
+  let cls = 'status-unknown';
+  if (s === 'submitted')           cls = 'status-submitted';
+  else if (s === 'presubmitted')   cls = 'status-presubmitted';
+  else if (s.includes('fill'))     cls = 'status-filled';
+  else if (s === 'cancelled' || s === 'inactive') cls = 'status-cancelled';
+  // An order that executed shares and was THEN cancelled (the engine cancels
+  // the unfilled remainder after a partial fill) is not a "nothing happened"
+  // order — say so, or 405 real shares look like a cancelled order.
+  if (executed > 0 && (s === 'cancelled' || s === 'inactive')) {
+    return `<span class="status-pill status-cancelled" title="${executed} share(s) DID execute; only the unfilled remainder was cancelled">PART FILL · CANCELLED</span>`;
+  }
+  return `<span class="status-pill ${cls}">${esc(status)}</span>`;
+}
+
+function fmtPnl(pnl) {
+  if (pnl === null || pnl === undefined) return '<span class="pnl-nil">–</span>';
+  const n = parseFloat(pnl);
+  const cls = n >= 0 ? 'pnl-pos' : 'pnl-neg';
+  const sign = n >= 0 ? '+' : '';
+  return `<span class="${cls}">${sign}$${Math.abs(n).toFixed(2)}</span>`;
+}
+
+function fmtTime(iso) {
+  if (!iso) return '–';
+  const d = new Date(iso);
+  return d.toLocaleTimeString('en-US', { hour12: false,
+    hour:'2-digit', minute:'2-digit', second:'2-digit' });
+}
+
+// ── Render positions ───────────────────────────────────────────────────────
+function renderPositions(data) {
+  const tbody = document.getElementById('positionsBody');
+  const positions = (data && data.positions) || [];
+  if (!positions.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="8">No open positions</td></tr>';
+    return;
+  }
+  // Per-symbol SL movement, taken from today's stop_moves feed, so an open
+  // position shows not just where its stop IS but that it has MOVED and from where.
+  const moves = {};
+  ((_lastData && _lastData.stop_moves) || []).forEach(m => {
+    if (!moves[m.symbol]) moves[m.symbol] = m;   // list is newest-first
+  });
+
+  tbody.innerHTML = positions.map(p => {
+    const mv = moves[p.symbol];
+    let slCell = '<span class="pnl-nil">–</span>';
+    if (p.stop_loss != null) {
+      slCell = '<strong>' + (+p.stop_loss).toFixed(2) + '</strong>';
+      // Share count the stop actually covers. A stop that does not match the
+      // position is the dangerous case — a stop-out would flip the position.
+      if (p.stop_qty != null) {
+        if (p.stop_covers === false) {
+          slCell += ` <span class="stop-bad" title="MISMATCH — stop covers ${p.stop_qty} shares but the position is ${Math.abs(+p.qty)}. A stop-out would not flat the position.">⚠ ${(+p.stop_qty).toLocaleString()} sh</span>`;
+        } else {
+          slCell += ` <span class="stop-ok" title="stop covers the full position">${(+p.stop_qty).toLocaleString()} sh ✓</span>`;
+        }
+      }
+      if (p.stop_moves > 0) {
+        const d = (p.stop_orig != null) ? (p.stop_loss - p.stop_orig) : null;
+        slCell += `<div class="sl-sub">moved ${p.stop_moves}×`
+                + (p.stop_orig != null ? ` from ${(+p.stop_orig).toFixed(2)} (${d >= 0 ? '+' : ''}${d.toFixed(2)})` : '')
+                + (p.stop_last_move ? ` · last ${esc(p.stop_last_move)}` : '') + `</div>`;
+      } else if (mv) {
+        const up = mv.delta > 0;
+        slCell += `<div class="sl-sub">${up ? '▲ +' : '▼ '}${mv.delta.toFixed(2)} from ${mv.from.toFixed(2)} · ${esc(mv.time)}</div>`;
+      }
+      if (p.be_activated) {
+        slCell += ` <span style="color:#2ecc71;font-weight:600" title="breakeven active — profit locked">BE`
+                + (p.locked_pnl != null ? ' $' + (+p.locked_pnl).toFixed(0) : '') + '</span>';
+      }
+      if (p.stop_oid) {
+        slCell += `<div class="sl-sub">TWS_${esc(p.stop_oid)}</div>`;
+      }
+    }
+    return `
+    <tr>
+      <td><strong>${esc(p.symbol)}</strong></td>
+      <td>${sideBadge(p.side)}</td>
+      <td>${(+p.qty || 0).toLocaleString()}${p.qty_match === false ? ' <span style="color:#e74c3c;font-weight:700" title="MISMATCH — risk system holds ' + (p.qty_internal != null ? p.qty_internal : '?') + ', IBKR holds ' + Math.abs(+p.qty || 0) + '">⚠' + (p.qty_internal != null ? ' ('+p.qty_internal+')' : '') + '</span>' : ''}</td>
+      <td>${(+p.avg_cost || 0).toFixed(4)}</td>
+      <!-- 2026-08-06: live price, straight off the same tick stream the shadow
+           fill engine prices against — so the panel moves with the market. -->
+      <td>${p.last_price != null ? (+p.last_price).toFixed(4) : '<span class="pnl-nil">–</span>'}</td>
+      <td>${slCell}</td>
+      <td>${fmtPnl(p.unrealized_pnl)}${p.unrealized_pct != null
+            ? '<div class="sl-sub">' + (p.unrealized_pct >= 0 ? '+' : '')
+              + (+p.unrealized_pct).toFixed(2) + '%</div>' : ''}</td>
+      <td>${sideBadge(p.direction)}</td>
+      <td>${esc(p.entry_time || '–')}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Render MACD state ──────────────────────────────────────────────────────
+function fmtSigned(v, digits) {
+  if (v === null || v === undefined) return '<span class="pnl-nil">–</span>';
+  const n = parseFloat(v);
+  if (Number.isNaN(n)) return '<span class="pnl-nil">–</span>';
+  const cls = n > 0 ? 'pnl-pos' : (n < 0 ? 'pnl-neg' : '');
+  const sign = n > 0 ? '+' : '';
+  return `<span class="${cls}">${sign}${n.toFixed(digits)}</span>`;
+}
+
+// 2026-06-03: ENTRY/EXIT in one cell. Single value when exit==entry (or no
+// exit pipe); "entry / exit" with a slash when the exit timeframe differs.
+function slash(a, b, digits) {
+  const A = fmtSigned(a, digits);
+  if (b === null || b === undefined) return A;
+  if (a !== null && a !== undefined && Number(a) === Number(b)) return A;
+  return A + '<span style="color:var(--muted)"> / </span>' + fmtSigned(b, digits);
+}
+function slashRes(a, b) {
+  if (!b || b === a) return esc(a);
+  return esc(a) + '<span style="color:var(--gold)"> / </span>' + esc(b);
+}
+
+function macdStateBadge(row) {
+  if (!row.ready) return '<span class="badge">WARMING</span>';
+  if (row.macd === null || row.macd === undefined) return '<span class="badge">NO DATA</span>';
+  const above = row.macd > 0;
+  const armed = row.intrabar_armed;
+  const txt = above ? 'F&gt;S' : 'F&lt;S';
+  const cls = above ? 'badge-long' : 'badge-short';
+  const armedTag = armed ? '' : ' <span class="badge" style="margin-left:4px">FIRED</span>';
+  return `<span class="badge ${cls}">${txt}</span>${armedTag}`;
+}
+
+function renderMACDState(data) {
+  const tbody = document.getElementById('macdBody');
+  const rows  = (data && data.macd_state) || [];
+  if (!rows.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="11">No MACD pipelines</td></tr>';
+    return;
+  }
+  // 2026-05-22: Fast / Slow columns removed (they were price-like EMAs).
+  // Mean columns relabeled per spec:
+  //   "MACD Mean Long"       ← signal_neg_mean   (Filter A threshold for LONG)
+  //   "MACD Mean Short"      ← signal_pos_mean   (Filter A threshold for SHORT)
+  //   "MACD Diff Mean Long"  ← diff_neg_mean     (Filter B threshold for LONG)
+  //   "MACD Diff Mean Short" ← diff_pos_mean     (Filter B threshold for SHORT)
+  // Added column: Mean Start (per-symbol MeanCalcStartTime) for verifying
+  // Excel changes have propagated.
+  tbody.innerHTML = rows.map(r => {
+    const idxTag = r.is_index ? ' <span class="badge" style="margin-left:4px;font-size:9px">IDX</span>' : '';
+    const meanStart = r.mean_calc_start ? esc(r.mean_calc_start) :
+                                          '<span class="pnl-nil">–</span>';
+    return `
+    <tr>
+      <td><strong>${esc(r.symbol)}</strong>${idxTag}</td>
+      <td style="color:var(--muted)">${slashRes(r.resolution, r.exit_resolution)}</td>
+      <td>${slash(r.macd, r.exit_macd, 5)}</td>
+      <td>${slash(r.signal, r.exit_signal, 5)}</td>
+      <td>${slash(r.signal_neg_mean, r.exit_signal_neg_mean, 5)}</td>
+      <td>${slash(r.signal_pos_mean, r.exit_signal_pos_mean, 5)}</td>
+      <td>${slash(r.diff, r.exit_diff, 5)}</td>
+      <td>${slash(r.diff_neg_mean, r.exit_diff_neg_mean, 5)}</td>
+      <td>${slash(r.diff_pos_mean, r.exit_diff_pos_mean, 5)}</td>
+      <td style="color:var(--muted)">${meanStart}</td>
+      <td>${macdStateBadge(r)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Render orders ──────────────────────────────────────────────────────────
+// Roles come from the engine's order_ref, so an ENTRY is distinguishable from
+// the protective stop that guards it — previously every row looked alike and
+// the panel appeared to contain nothing but stop orders.
+function roleBadge(role) {
+  const r = (role || '').toUpperCase();
+  const map = {
+    'ENTRY'    : ['#1a7f5a', 'ENTRY'],
+    'STOP'     : ['#a3341f', 'STOP'],
+    'STOP-WIDE': ['#7a4a12', 'STOP (wide)'],
+    'EXIT'     : ['#1f5fa3', 'EXIT'],
+    'EXIT-TECH': ['#1f5fa3', 'EXIT (tech)'],
+    'EOD-EXIT' : ['#5a3f8f', 'EOD EXIT']
+  };
+  const hit = map[r];
+  if (!hit) return '<span class="pnl-nil">–</span>';
+  return `<span class="badge" style="background:${hit[0]};color:#fff">${hit[1]}</span>`;
+}
+
+function fmtSlip(v) {
+  if (v === null || v === undefined) return '<span class="pnl-nil">–</span>';
+  const n = parseFloat(v);
+  if (Number.isNaN(n) || n === 0) return '<span class="pnl-nil">0.00</span>';
+  const cls = n > 0 ? 'pnl-pos' : 'pnl-neg';
+  return `<span class="${cls}" title="${n > 0 ? 'filled better than the order price' : 'filled worse than the order price'}">${n > 0 ? '+' : ''}${n.toFixed(3)}</span>`;
+}
+
+function renderOrders(data) {
+  const tbody = document.getElementById('ordersBody');
+  let orders = [];
+  if (data) {
+    const all = data.orders_all || [];
+    if (_activeTab === 'working')        orders = data.orders_working || [];
+    else if (_activeTab === 'filled')    orders = data.orders_filled || [];
+    else if (_activeTab === 'cancelled') orders = data.orders_cancelled || [];
+    else if (_activeTab === 'entries')   orders = all.filter(o => o.role === 'ENTRY');
+    else if (_activeTab === 'stops')     orders = all.filter(o => (o.role || '').indexOf('STOP') === 0);
+    else orders = all;
+  }
+  if (!orders.length) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="14">No ${_activeTab} orders</td></tr>`;
+    return;
+  }
+  // newest first — the most recent activity is what the user is watching for
+  orders = orders.slice().sort((a, b) => String(b.time || '').localeCompare(String(a.time || '')));
+
+  tbody.innerHTML = orders.map(o => {
+    let sl = '<span class="pnl-nil">–</span>';
+    if (o.stop_price != null) {
+      sl = (+o.stop_price).toFixed(2);
+      if (o.stop_moved) {
+        const d = (o.stop_orig != null) ? (o.stop_price - o.stop_orig) : 0;
+        sl += ` <span class="sl-moved" title="moved ${o.stop_moves} time(s) from ${(+o.stop_orig).toFixed(2)}${o.stop_last_move ? ' · last ' + o.stop_last_move : ''}">`
+            + `${d > 0 ? '▲' : '▼'} ${o.stop_moves}×</span>`
+            + `<div class="sl-sub">from ${(+o.stop_orig).toFixed(2)}</div>`;
+      }
+    }
+    // Every individual execution, so what EXECUTED can be checked print by
+    // print against the broker instead of trusting one rolled-up number.
+    const prints = (o.fills || []).map(f =>
+      `<div class="sl-sub">${esc(f.time)} · ${(+f.qty).toLocaleString()} @ ${(+f.price).toFixed(2)}${f.exchange ? ' · ' + esc(f.exchange) : ''}</div>`
+    ).join('');
+
+    // Executed cell: blank orders and partial fills must be unmistakable.
+    let execCell;
+    if (!o.executed) {
+      execCell = '<span class="qty-none" title="no shares executed">0</span>';
+    } else if (o.partial) {
+      execCell = `<span class="qty-partial" title="PARTIAL — ordered ${o.ordered}, executed ${o.executed}">`
+               + `${(+o.executed).toLocaleString()}</span>`
+               + `<div class="sl-sub">partial · ${Math.round(100 * o.executed / (o.ordered || 1))}% of ${(+o.ordered).toLocaleString()}</div>`;
+    } else {
+      execCell = `<strong>${(+o.executed).toLocaleString()}</strong>`;
+    }
+    // The two share-count sources disagreed. We show the larger (never
+    // understating the position) and say so, rather than hide it.
+    if (o.qty_discrepancy) {
+      execCell += ` <span class="stop-bad" title="Share-count sources disagree — execution reports say ${o.qty_discrepancy.fills}, IBKR orderStatus says ${o.qty_discrepancy.ibkr}. Showing the larger so the position is never understated.">⚠</span>`
+                + `<div class="sl-sub" style="color:#e74c3c">fills ${o.qty_discrepancy.fills} vs IBKR ${o.qty_discrepancy.ibkr}</div>`;
+    }
+    return `
+    <tr${o.partial ? ' class="row-partial"' : ''}>
+      <td style="color:var(--muted);font-size:11px">${esc(o.time || '–')}</td>
+      <td style="color:var(--muted);font-size:11px">${esc(o.order_id)}</td>
+      <td><strong>${esc(o.symbol)}</strong></td>
+      <td>${roleBadge(o.role)}</td>
+      <td>${typeBadge(o.order_type)}</td>
+      <td>${sideBadge(o.side)}</td>
+      <td>${(+o.ordered || 0).toLocaleString()}${o.qty_reduced ? '<div class="sl-sub qty-reduced" title="IBKR reduced this stop to match the parent\'s actual fill">now ' + (+o.live_qty).toLocaleString() + ' sh</div>' : ''}</td>
+      <td>${execCell}</td>
+      <td>${esc(o.price || '–')}</td>
+      <td>${sl}${o.stop_qty != null && !o.stop_qty_hidden ? '<div class="sl-sub">' + (+o.stop_qty).toLocaleString() + ' sh</div>' : ''}</td>
+      <td>${o.avg_fill != null ? (+o.avg_fill).toFixed(4) + prints : '<span class="pnl-nil">–</span>'}</td>
+      <td>${fmtSlip(o.slippage)}</td>
+      <td>${o.notional != null ? '$' + (+o.notional).toLocaleString(undefined,{maximumFractionDigits:0}) : '<span class="pnl-nil">–</span>'}${o.commission ? '<div class="sl-sub">comm $' + (+o.commission).toFixed(2) + '</div>' : ''}</td>
+      <td>${statusPill(o.status, o.executed)}${o.error_code ? '<div class="sl-sub" style="color:#e74c3c" title="' + esc(o.error_msg) + '">err ' + o.error_code + ' · ' + esc(String(o.error_msg).slice(0, 40)) + '</div>' : ''}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Render stop-loss movements ─────────────────────────────────────────────
+function renderStopMoves(data) {
+  const tbody = document.getElementById('stopMovesBody');
+  const moves = (data && data.stop_moves) || [];
+  if (!moves.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No stop movements yet today</td></tr>';
+    return;
+  }
+  tbody.innerHTML = moves.map(m => {
+    const up = m.delta > 0;
+    return `
+    <tr>
+      <td style="color:var(--muted);font-size:11px">${esc(m.time)}</td>
+      <td><strong>${esc(m.symbol)}</strong></td>
+      <td style="color:var(--muted);font-size:11px">TWS_${esc(m.oid)}</td>
+      <td>${(+m.from).toFixed(2)}</td>
+      <td><strong>${(+m.to).toFixed(2)}</strong></td>
+      <td class="${up ? 'pnl-pos' : 'pnl-neg'}">${up ? '▲ +' : '▼ '}${(+m.delta).toFixed(2)}</td>
+      <td>${m.kind === 'BREAKEVEN'
+              ? '<span class="badge" style="background:#1a7f5a;color:#fff">BREAKEVEN</span>'
+              : '<span class="badge" style="background:#1f5fa3;color:#fff">TRAIL #' + (m.step - 1) + '</span>'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Render completed round trips ───────────────────────────────────────────
+function renderTrips(data) {
+  const tbody = document.getElementById('tripsBody');
+  const trips = (data && data.round_trips) || [];
+  if (!trips.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="9">No completed trades today</td></tr>';
+    return;
+  }
+  tbody.innerHTML = trips.slice().reverse().map(t => `
+    <tr>
+      <td><strong>${esc(t.symbol)}</strong></td>
+      <td>${sideBadge(t.side)}</td>
+      <td>${(+t.qty || 0).toLocaleString()}</td>
+      <td style="color:var(--muted);font-size:11px">${esc(t.entry_time || '–')}</td>
+      <td>${(+t.entry_px).toFixed(2)}</td>
+      <td style="color:var(--muted);font-size:11px">${esc(t.exit_time || '–')}</td>
+      <td>${(+t.exit_px).toFixed(2)}</td>
+      <td>${roleBadge(t.exit_role)}</td>
+      <td>${fmtPnl(t.pnl)}${t.ibkr_pnl != null ? '<div class="sl-sub">IBKR ' + (+t.ibkr_pnl).toFixed(2) + (t.commission ? ' · comm ' + (+t.commission).toFixed(2) : '') + '</div>' : ''}</td>
+    </tr>
+  `).join('');
+}
+
+// ── Update summary cards ───────────────────────────────────────────────────
+function updateCards(data) {
+  const posCount   = (data && data.positions && data.positions.length) || 0;
+  const ordWorking = (data && data.orders_working && data.orders_working.length) || 0;
+  const twsOk      = data && data.tws_connected;
+  const rates      = (data && data.rates) || {};
+  const rate       = rates.tws_rate !== undefined ? rates.tws_rate : '–';
+
+  document.getElementById('cardPositions').textContent = posCount;
+  document.getElementById('cardOrders').textContent    = ordWorking;
+
+  const twsEl = document.getElementById('cardTws');
+  twsEl.textContent = twsOk ? 'Online' : 'Offline';
+  twsEl.className   = 'card-value ' + (twsOk ? 'online' : 'offline');
+
+  document.getElementById('cardRate').textContent =
+    rate !== '–' ? rate + '/s' : '–';
+
+  // Prefer IBKR's OWN realised P&L (from the COMMISSION reports) so the card
+  // agrees with TWS; fall back to the fill-price reconstruction.
+  const pnlEl = document.getElementById('cardPnl');
+  const pnl   = (data && data.ibkr_realized_pnl != null)
+                  ? data.ibkr_realized_pnl : (data && data.realized_pnl);
+  if (pnl === null || pnl === undefined) {
+    pnlEl.textContent = '–';
+    pnlEl.className   = 'card-value';
+  } else {
+    const n = +pnl;
+    pnlEl.textContent = (n >= 0 ? '+$' : '-$') + Math.abs(n).toLocaleString(undefined, {maximumFractionDigits: 0});
+    pnlEl.className   = 'card-value ' + (n >= 0 ? 'online' : 'offline');
+  }
+
+  // 2026-08-06: SHADOW badge — shows the shadow book's NET P&L (realized +
+  // open mark-to-market), which the realised-only card above cannot show.
+  const shBadge = document.getElementById('shadowBadge');
+  if (data && data.mode === 'SHADOW' && data.shadow) {
+    const s = data.shadow;
+    const nn = +s.net || 0;
+    shBadge.style.display = '';
+    shBadge.href = s.url || 'http://<VM_HOST>:8090/';
+    shBadge.textContent = 'SHADOW MODE · net ' +
+      (nn >= 0 ? '+$' : '-$') + Math.abs(nn).toFixed(2) +
+      ' · ' + (s.trades || 0) + ' trades · ' + (s.open || 0) + ' open';
+  } else if (shBadge) {
+    shBadge.style.display = 'none';
+  }
+
+  // Orders placed + the shares that ACTUALLY executed behind them
+  const placedEl = document.getElementById('cardPlaced');
+  const nOrders  = (data && data.orders_all && data.orders_all.length) || 0;
+  const shares   = (data && data.shares_executed) || 0;
+  placedEl.innerHTML = nOrders +
+    ' <span style="font-size:12px;color:var(--muted)">/ ' +
+    shares.toLocaleString() + ' sh executed</span>';
+
+  // Live indicator
+  const dot  = document.getElementById('liveDot');
+  const live = document.getElementById('liveText');
+  if (twsOk) {
+    dot.classList.remove('offline');
+    live.textContent = 'Live';
+  } else {
+    dot.classList.add('offline');
+    live.textContent = 'Disconnected';
+  }
+}
+
+// ── Staleness banner: warn when the displayed data isn't actually live ──────
+function updateStaleBanner(d){
+  const el = document.getElementById('staleBanner');
+  if(!el) return;
+  const ps = (d.positions_stale_sec==null?0:d.positions_stale_sec);
+  const os = (d.orders_stale_sec==null?0:d.orders_stale_sec);
+  const worst = Math.max(ps, os);
+  // Quantity integrity and stop coverage outrank staleness — a wrong share
+  // count or an uncovered position is a live risk, not a display lag.
+  if(d.stop_coverage_alerts > 0){
+    el.style.display='block'; el.style.background='#b3121f';
+    el.textContent='⚠ STOP DOES NOT COVER THE POSITION on '+d.stop_coverage_alerts
+      +' symbol(s) — a stop-out would NOT flatten. Check the Positions table.';
+    return;
+  }
+  if(d.qty_discrepancies > 0){
+    const o=(d.qty_discrepancy_orders||[])[0]||{};
+    el.style.display='block'; el.style.background='#c77700';
+    el.textContent='⚠ SHARE-COUNT SOURCES DISAGREE on '+d.qty_discrepancies
+      +' order(s) (e.g. '+(o.symbol||'')+' fills '+(o.fills)+' vs IBKR '+(o.ibkr)
+      +'). Showing the larger so the position is never understated.';
+    return;
+  }
+  if(!d.tws_connected){
+    el.style.display='block'; el.style.background='#b3121f';
+    el.textContent='⚠ NOT CONNECTED to IBKR — positions & orders below may be OUT OF DATE.';
+  } else if(worst >= 15){
+    el.style.display='block'; el.style.background = worst>=45 ? '#b3121f' : '#c77700';
+    el.textContent='⚠ LIVE SYNC DELAYED — last IBKR refresh '+Math.round(worst)+'s ago. The positions/orders shown may not be the actual ones right now.';
+  } else {
+    el.style.display='none';
+  }
+}
+
+// ── Fetch and update ───────────────────────────────────────────────────────
+async function fetchData() {
+  try {
+    const res  = await fetch('/api/data?t=' + Date.now(), { cache: 'no-store' });
+    const data = await res.json();
+    _lastData  = data;
+
+    updateCards(data);
+    renderPositions(data);
+    renderMACDState(data);
+    renderStopMoves(data);
+    renderOrders(data);
+    renderTrips(data);
+    updateStaleBanner(data);
+
+    document.getElementById('lastRefreshed').textContent =
+      fmtTime(data.timestamp);
+  } catch (e) {
+    // silently ignore fetch errors — will retry next cycle
+  }
+}
+
+// ── Countdown timer ────────────────────────────────────────────────────────
+function startCountdown() {
+  _countdownSec = 3;
+  const fill = document.getElementById('countdownFill');
+  document.getElementById('countdown').textContent = _countdownSec;
+  fill.style.width = '100%';
+
+  if (_countdownInterval) clearInterval(_countdownInterval);
+  const TICK_MS = 100;
+  const TOTAL   = 3000;
+  let elapsed   = 0;
+
+  _countdownInterval = setInterval(() => {
+    elapsed += TICK_MS;
+    const pct = Math.max(0, 100 - (elapsed / TOTAL) * 100);
+    fill.style.width = pct + '%';
+    const sec = Math.ceil((TOTAL - elapsed) / 1000);
+    document.getElementById('countdown').textContent = Math.max(0, sec);
+  }, TICK_MS);
+}
+
+// ── Main loop ──────────────────────────────────────────────────────────────
+async function tick() {
+  await fetchData();
+  startCountdown();
+  setTimeout(tick, 3000);
+}
+
+// Kick off
+tick();
+</script>
+</body>
+</html>
